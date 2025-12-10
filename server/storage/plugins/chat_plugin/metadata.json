@@ -1,0 +1,1 @@
+{"name": "chat_plugin", "display_name": "Room Chat", "description": "Enables text chat in game rooms.", "version": "1.0.0", "entry_point": "main.py"}
