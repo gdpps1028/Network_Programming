@@ -82,7 +82,12 @@ class RoomManager:
             print("Failed to fetch rooms.")
             return
 
-        rooms = response["data"]["rooms"]
+        data = response.get("data")
+        if not data:
+            print("Server returned success but no data payload.")
+            return
+
+        rooms = data.get("rooms")
         if not rooms:
             print("No active rooms.")
             return
