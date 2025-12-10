@@ -37,6 +37,12 @@ class Menu:
             elif choice == '4':
                 self.list_games()
             elif choice == '5':
+                # Send logout message to server before returning to auth menu
+                try:
+                    send_json(self.sock, create_message(MSG_LOGOUT))
+                except:
+                    pass
+                print("Logged out successfully.")
                 return
             else:
                 print("Invalid option. Please try again.")
