@@ -4,8 +4,9 @@ import sys
 import json
 
 class GameLauncher:
-    def __init__(self, username):
+    def __init__(self, username, server_host=None):
         self.username = username
+        self.server_host = server_host
         self.downloads_dir = os.path.join("player_client", "downloads", username)
 
     def launch_game(self, game_id, room_id, server_host, server_port, is_host):

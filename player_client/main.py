@@ -52,7 +52,7 @@ def main():
         
         if choice == '1':
             if auth.login():
-                menu = Menu(sock, auth.username)
+                menu = Menu(sock, auth.username, host)
                 menu.show_main_menu()
         elif choice == '2':
             auth.register()

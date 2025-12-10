@@ -3,7 +3,7 @@
 ## Setting up server
 
 ```bash
-python server/main.py <port>
+python server/main.py --port <port>
 ```
 
 port is optional, default to ```8888```

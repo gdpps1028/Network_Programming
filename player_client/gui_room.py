@@ -6,7 +6,7 @@ from shared.protocol import *
 from shared.utils import send_json, recv_json
 
 class RoomGUI:
-    def __init__(self, sock, room_id, username, is_host, game_id, launcher, plugin_manager, active_plugins, initial_players=None, initial_host=None):
+    def __init__(self, sock, room_id, username, is_host, game_id, launcher, plugin_manager, active_plugins, initial_players=None, initial_host=None, server_host=None):
         self.sock = sock
         self.room_id = room_id
         self.username = username
@@ -15,6 +15,7 @@ class RoomGUI:
         self.launcher = launcher
         self.plugin_manager = plugin_manager
         self.active_plugins = active_plugins
+        self.server_host = server_host
         self.players = initial_players if initial_players else [username]
         self.current_host = initial_host if initial_host else (username if is_host else self.players[0])
         
@@ -221,7 +222,8 @@ class RoomGUI:
         if msg_type == MSG_GAME_STARTED:
             self._append_log("Game Starting!")
             port = msg["data"]["port"]
-            host = msg["data"]["host"]
+            # Use the server host from config.json, not from the message
+            host = self.server_host if self.server_host else msg["data"]["host"]
             
             # Minimize window
             self.root.withdraw()

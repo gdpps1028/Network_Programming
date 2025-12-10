@@ -11,11 +11,12 @@ from shared.protocol import MSG_LOGOUT, create_message
 from shared.utils import send_json
 
 class Menu:
-    def __init__(self, sock, username):
+    def __init__(self, sock, username, server_host):
         self.sock = sock
         self.username = username
+        self.server_host = server_host
         self.store = Store(sock, username)
-        self.room_manager = RoomManager(sock, username)
+        self.room_manager = RoomManager(sock, username, server_host)
         self.plugin_manager = PluginManager(sock, username)
 
     def show_main_menu(self):

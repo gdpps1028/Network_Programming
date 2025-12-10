@@ -21,10 +21,11 @@ class RoomContext:
         send_json(self.sock, msg)
 
 class RoomManager:
-    def __init__(self, sock, username):
+    def __init__(self, sock, username, server_host):
         self.sock = sock
         self.username = username
-        self.launcher = GameLauncher(username)
+        self.server_host = server_host
+        self.launcher = GameLauncher(username, server_host)
         self.plugin_manager = PluginManager(sock, username)
         self.store = Store(sock, username)
         self.active_plugins = []
@@ -141,7 +142,8 @@ class RoomManager:
                 self.plugin_manager, 
                 self.active_plugins,
                 initial_players,
-                initial_host
+                initial_host,
+                self.server_host
             )
             gui.show()
         except Exception as e:
