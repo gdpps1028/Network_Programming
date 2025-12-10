@@ -1,1 +1,5 @@
 **/__pycache__/
+server/storage/games/*
+server/storage/games.json
+server/storage/users.json
+player_client/downloads/*
