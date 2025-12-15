@@ -40,16 +40,26 @@ class GameServer:
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         
-        # Try to bind, handle errors gracefully
-        try:
-            server_socket.bind((self.host, self.port))
-        except OSError as e:
-            print(f"\nError: Failed to bind to {self.host}:{self.port}")
-            if e.errno == 98 or e.errno == 48:  # EADDRINUSE on Linux/Mac
-                print(f"Port {self.port} is already in use.")
-                print(f"Try running with a different port: python server/main.py --port <PORT>")
-            else:
-                print(f"Socket error: {e}")
+        # Try to bind with retries
+        start_port = self.port
+        max_retries = 5
+        bound = False
+        
+        for i in range(max_retries):
+            try:
+                self.port = start_port + i
+                server_socket.bind((self.host, self.port))
+                bound = True
+                break
+            except OSError as e:
+                # EADDRINUSE
+                if e.errno == 98 or e.errno == 48:
+                    print(f"Port {self.port} is already in use, trying next...")
+                else:
+                    print(f"Socket error on port {self.port}: {e}")
+        
+        if not bound:
+            print(f"\nError: Could not bind to any port in range {start_port}-{start_port + max_retries - 1}")
             sys.exit(1)
             
         server_socket.listen(5)

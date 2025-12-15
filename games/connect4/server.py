@@ -20,7 +20,27 @@ class Connect4Server:
     def start(self):
         server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server_sock.bind((HOST, PORT))
+        
+        # Retry binding
+        start_port = PORT
+        max_retries = 5
+        bound = False
+        
+        for i in range(max_retries):
+            try:
+                current_port = start_port + i
+                server_sock.bind((HOST, current_port))
+                bound = True
+                print(f"Game Server started on {current_port}")
+                sys.stdout.flush()
+                break
+            except OSError:
+                continue
+                
+        if not bound:
+            print(f"Error: Could not bind to any port in range {start_port}-{start_port+max_retries-1}")
+            sys.exit(1)
+
         server_sock.listen(2)
 
         try:

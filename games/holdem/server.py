@@ -146,7 +146,26 @@ class HoldemServer:
         self.new_players = []
 
     def start(self):
-        self.server_sock.bind((HOST, PORT))
+        # Retry binding
+        start_port = PORT
+        max_retries = 5
+        bound = False
+        
+        for i in range(max_retries):
+            try:
+                current_port = start_port + i
+                self.server_sock.bind((HOST, current_port))
+                bound = True
+                print(f"Game Server started on {current_port}")
+                sys.stdout.flush()
+                break
+            except OSError:
+                continue
+                
+        if not bound:
+            print(f"Error: Could not bind to any port in range {start_port}-{start_port+max_retries-1}")
+            sys.exit(1)
+
         self.server_sock.listen(10)
         threading.Thread(target=self.accept_loop, daemon=True).start()
         self.game_loop()

@@ -82,7 +82,6 @@ class LobbyService:
                 "status": room["status"],
                 "joined": user_info["username"]
             })
-            # Broadcast to players who were already in the room (not the new joiner)
             existing_players = [p for p in room["players"] if p != user_info["username"]]
             self.broadcast_func(existing_players, msg)
             
@@ -90,7 +89,6 @@ class LobbyService:
 
     def handle_list_rooms(self):
         with self.lock:
-            # Filter out non-serializable objects like 'process'
             rooms_list = []
             for r in self.rooms.values():
                 room_data = r.copy()
@@ -120,7 +118,6 @@ class LobbyService:
             
             version = game["latest_version"]
             
-            # Define a 'run' directory for games on server
             run_dir = os.path.join("server", "running_games", f"{game_id}_{version}")
             if not os.path.exists(run_dir):
                 # Unzip if not exists
@@ -141,7 +138,6 @@ class LobbyService:
             # Find server entry point
             server_script = os.path.join(run_dir, "server.py")
             if not os.path.exists(server_script):
-                # Try subdir (ignoring __pycache__)
                 subdirs = [d for d in os.listdir(run_dir) if os.path.isdir(os.path.join(run_dir, d)) and d != "__pycache__"]
                 if len(subdirs) == 1:
                     server_script = os.path.join(run_dir, subdirs[0], "server.py")
@@ -149,22 +145,54 @@ class LobbyService:
             if not os.path.exists(server_script):
                 return create_response(STATUS_ERROR, message="Game server script not found")
                 
-            # Allocate Port
             port = self.next_port
-            self.next_port += 1
             
-            # Launch subprocess using absolute path
             server_script_abs = os.path.abspath(server_script)
             server_dir_abs = os.path.dirname(server_script_abs)
             
             try:
                 # python3 -u server.py <port>
-                proc = subprocess.Popen([sys.executable, "-u", server_script_abs, str(port)], cwd=server_dir_abs)
-                # Give the server a moment to start and bind the port
-                time.sleep(1)
+                proc = subprocess.Popen(
+                    [sys.executable, "-u", server_script_abs, str(port)], 
+                    cwd=server_dir_abs,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True
+                )
+                
+                import re
+                port = self.next_port 
+                start_time = time.time()
+                
+                while time.time() - start_time < 5:
+                    line = proc.stdout.readline()
+                    if not line:
+                        if proc.poll() is not None:
+                            _, err = proc.communicate()
+                            return create_response(STATUS_ERROR, message=f"Game process died: {err}")
+                        break
+                        
+                    print(f"[{game_id}] {line.strip()}") 
+                    
+                    match = re.search(r"Game Server started on (\d+)", line)
+                    if match:
+                        port = int(match.group(1))
+                        break
+
+                def reader_thread(p):
+                    try:
+                        while p.poll() is None:
+                            line = p.stdout.readline()
+                            if line: print(f"[GAME LOG] {line.strip()}")
+                    except: pass
+                
+                threading.Thread(target=reader_thread, args=(proc,), daemon=True).start()
+
+                self.next_port = port + 1 
+                
                 room["process"] = proc
                 room["port"] = port
-                room["run_dir"] = run_dir  # Store run_dir for cleanup later
+                room["run_dir"] = run_dir
                 room["status"] = "PLAYING"
             except Exception as e:
                 return create_response(STATUS_ERROR, message=f"Failed to launch game server: {e}")
